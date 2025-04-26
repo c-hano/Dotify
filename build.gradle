@@ -31,6 +31,10 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// 도트화용
+	implementation 'net.coobird:thumbnailator:0.4.14'
+	// GIF 생성용 (필요시)
+	implementation 'com.madgag:gifencoder:0.2.3'
 }
 
 tasks.named('test') {
