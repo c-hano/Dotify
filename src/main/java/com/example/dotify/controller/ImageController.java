@@ -1,6 +1,5 @@
 package com.example.dotify.controller;
 
-
 import com.example.dotify.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +13,13 @@ public class ImageController {
 
     private final ImageService imageService;
 
-    @PostMapping
-    public ResponseEntity<byte[]> convertToPixelArt(@RequestParam("file") MultipartFile file) {
-        byte[] convertedImage = imageService.convertToPixelArt(file);
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<byte[]> convertToPixelArt(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "pixelSize", defaultValue = "32") int pixelSize
+    ) {
+        byte[] convertedImage = imageService.convertToPixelArt(file, pixelSize);
+
         return ResponseEntity
                 .ok()
                 .header("Content-Type", "image/png")
