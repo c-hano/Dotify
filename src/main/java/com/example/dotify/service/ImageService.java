@@ -1,5 +1,6 @@
 package com.example.dotify.service;
 
+import java.io.ByteArrayInputStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +16,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ImageService {
+    private final GifService gifService; // ⭐ GIF 생성용 서비스 추가
 
     public byte[] convertToPixelArt(MultipartFile file, int pixelSize, int colorLevels) {
         try {
@@ -53,19 +55,30 @@ public class ImageService {
             // 4. 밝기 정규화
             BufferedImage normalizedImage = applyBrightnessNormalization(clusteredImage);
 
-            // 5. 포스터라이징 (16단계로 부드럽게 색 블럭화)
+            // 5. 포스터라이징 (16단계)
             BufferedImage posterizedImage = applyPosterization(normalizedImage, 16);
 
-            // 6. 채도 + 대비 부드럽게 조정
+            // 6. 채도/대비 보정
             BufferedImage boostedImage = applySaturationAndContrast(posterizedImage, 1.2, 1.15);
 
-            // 7. 결과 반환
+            // 7. 결과 PNG 반환
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(boostedImage, "png", baos);
             return baos.toByteArray();
 
         } catch (IOException e) {
             throw new RuntimeException("도트 이미지 변환 실패", e);
+        }
+    }
+
+    // ✨ 추가: 변환된 도트 이미지를 기반으로 GIF 만들기
+    public byte[] convertToGif(MultipartFile file, int pixelSize, int colorLevels) {
+        try {
+            byte[] pixelArtBytes = convertToPixelArt(file, pixelSize, colorLevels);
+            BufferedImage pixelArtImage = ImageIO.read(new ByteArrayInputStream(pixelArtBytes));
+            return gifService.generateAnimatedGif(pixelArtImage);
+        } catch (IOException e) {
+            throw new RuntimeException("GIF 변환 실패", e);
         }
     }
 
