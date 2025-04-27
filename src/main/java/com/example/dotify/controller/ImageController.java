@@ -13,7 +13,7 @@ public class ImageController {
 
     private final ImageService imageService;
 
-    // 📌 1. 도트 PNG 변환
+    // 1. 도트 PNG 변환
     @PostMapping(value = "/convert", consumes = "multipart/form-data")
     public ResponseEntity<byte[]> convertToPixelArt(
             @RequestPart("file") MultipartFile file,
@@ -31,7 +31,7 @@ public class ImageController {
                 .body(convertedImage);
     }
 
-    // 📌 2. 도트 GIF 변환
+    // 2. 도트 GIF 변환
     @PostMapping(value = "/convert-gif", consumes = "multipart/form-data")
     public ResponseEntity<byte[]> convertToGif(
             @RequestPart("file") MultipartFile file,

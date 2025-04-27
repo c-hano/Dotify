@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ImageService {
-    private final GifService gifService; // ⭐ GIF 생성용 서비스 추가
+    private final GifService gifService; // GIF 생성용 서비스 추가
 
     public byte[] convertToPixelArt(MultipartFile file, int pixelSize, int colorLevels) {
         try {
@@ -71,7 +71,7 @@ public class ImageService {
         }
     }
 
-    // ✨ 추가: 변환된 도트 이미지를 기반으로 GIF 만들기
+    // 변환된 도트 이미지를 기반으로 GIF 만들기
     public byte[] convertToGif(MultipartFile file, int pixelSize, int colorLevels) {
         try {
             byte[] pixelArtBytes = convertToPixelArt(file, pixelSize, colorLevels);
@@ -82,7 +82,7 @@ public class ImageService {
         }
     }
 
-    // 🎨 K-means 색상 압축
+    // K-means 색상 압축
     private BufferedImage applyKMeansColorQuantization(BufferedImage image, int clusterCount, int iteration) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -170,7 +170,7 @@ public class ImageService {
         return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
     }
 
-    // ✨ 밝기 정규화
+    // 밝기 정규화
     private BufferedImage applyBrightnessNormalization(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -213,7 +213,7 @@ public class ImageService {
         return normalized;
     }
 
-    // ✨ 포스터라이징 적용
+    // 포스터라이징 적용
     private BufferedImage applyPosterization(BufferedImage image, int levelsPerChannel) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -240,7 +240,7 @@ public class ImageService {
         return result;
     }
 
-    // ✨ 채도 + 대비 부드럽게 조정
+    // 채도 + 대비 부드럽게 조정
     private BufferedImage applySaturationAndContrast(BufferedImage image, double saturationFactor, double contrastFactor) {
         int width = image.getWidth();
         int height = image.getHeight();

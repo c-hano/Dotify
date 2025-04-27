@@ -74,7 +74,6 @@ public class GifService {
         }
     }
 
-    // ✨ 피사체/배경 마스크 만들기 (간단한 밝기 기준)
     private BufferedImage createObjectMask(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -95,7 +94,7 @@ public class GifService {
         return mask;
     }
 
-    // ✨ 이미지를 이동시키는 메서드 (마스크 기반)
+    // 이미지를 이동시키는 메서드 (마스크 기반)
     private BufferedImage shiftImage(BufferedImage image, int offsetX, int offsetY, BufferedImage mask, boolean isObject) {
         int width = image.getWidth();
         int height = image.getHeight();
