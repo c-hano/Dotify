@@ -16,9 +16,10 @@ public class ImageController {
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<byte[]> convertToPixelArt(
             @RequestPart("file") MultipartFile file,
-            @RequestParam(value = "pixelSize", defaultValue = "32") int pixelSize
+            @RequestParam(value = "pixelSize", defaultValue = "32") int pixelSize,
+            @RequestParam(value = "colorLevels", defaultValue = "4") int colorLevels
     ) {
-        byte[] convertedImage = imageService.convertToPixelArt(file, pixelSize);
+        byte[] convertedImage = imageService.convertToPixelArt(file, pixelSize, colorLevels);
 
         return ResponseEntity
                 .ok()
