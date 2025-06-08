@@ -1,0 +1,15 @@
+# Gradle
+/build/
+/.build/
+/.gradle/
+/gradle/
+
+# IntelliJ 설정
+.idea/
+*.iml
+*.bin
+*.lock
+
+# OS별 무시 파일
+.DS_Store
+Thumbs.db

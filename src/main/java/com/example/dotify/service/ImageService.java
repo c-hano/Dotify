@@ -49,17 +49,17 @@ public class ImageService {
             g.drawImage(smallImage, 0, 0, originalImage.getWidth(), originalImage.getHeight(), null);
             g.dispose();
 
-            // 3. K-means 색상 압축 (32색)
+            // 3. K-means 색상 압축
             BufferedImage clusteredImage = applyKMeansColorQuantization(pixelArtImage, 32, 5);
 
             // 4. 밝기 정규화
             BufferedImage normalizedImage = applyBrightnessNormalization(clusteredImage);
 
-            // 5. 포스터라이징 (16단계)
-            BufferedImage posterizedImage = applyPosterization(normalizedImage, 16);
+            // 5. 디더링 적용
+            BufferedImage ditheredImage = applyFloydSteinbergDithering(normalizedImage, colorLevels);
 
             // 6. 채도/대비 보정
-            BufferedImage boostedImage = applySaturationAndContrast(posterizedImage, 1.2, 1.15);
+            BufferedImage boostedImage = applySaturationAndContrast(ditheredImage, 1.2, 1.15);
 
             // 7. 결과 PNG 반환
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -71,7 +71,6 @@ public class ImageService {
         }
     }
 
-    // 변환된 도트 이미지를 기반으로 GIF 만들기
     public byte[] convertToGif(MultipartFile file, int pixelSize, int colorLevels) {
         try {
             byte[] pixelArtBytes = convertToPixelArt(file, pixelSize, colorLevels);
@@ -82,7 +81,6 @@ public class ImageService {
         }
     }
 
-    // K-means 색상 압축
     private BufferedImage applyKMeansColorQuantization(BufferedImage image, int clusterCount, int iteration) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -170,7 +168,6 @@ public class ImageService {
         return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
     }
 
-    // 밝기 정규화
     private BufferedImage applyBrightnessNormalization(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -181,7 +178,6 @@ public class ImageService {
 
         int[][] brightness = new int[width][height];
 
-        // 1. 밝기 스캔
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Color color = new Color(image.getRGB(x, y));
@@ -192,19 +188,14 @@ public class ImageService {
             }
         }
 
-        // 2. 정규화
         double scale = 255.0 / Math.max(1, (maxBrightness - minBrightness));
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Color color = new Color(image.getRGB(x, y));
 
-                int r = (int) ((color.getRed() - minBrightness) * scale);
-                int g = (int) ((color.getGreen() - minBrightness) * scale);
-                int b = (int) ((color.getBlue() - minBrightness) * scale);
-
-                r = Math.min(255, Math.max(0, r));
-                g = Math.min(255, Math.max(0, g));
-                b = Math.min(255, Math.max(0, b));
+                int r = clamp((int) ((color.getRed() - minBrightness) * scale));
+                int g = clamp((int) ((color.getGreen() - minBrightness) * scale));
+                int b = clamp((int) ((color.getBlue() - minBrightness) * scale));
 
                 normalized.setRGB(x, y, new Color(r, g, b).getRGB());
             }
@@ -213,34 +204,6 @@ public class ImageService {
         return normalized;
     }
 
-    // 포스터라이징 적용
-    private BufferedImage applyPosterization(BufferedImage image, int levelsPerChannel) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-        int step = 256 / levelsPerChannel;
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                Color color = new Color(image.getRGB(x, y));
-
-                int r = (color.getRed() / step) * step;
-                int g = (color.getGreen() / step) * step;
-                int b = (color.getBlue() / step) * step;
-
-                Color newColor = new Color(
-                        Math.min(r, 255),
-                        Math.min(g, 255),
-                        Math.min(b, 255)
-                );
-                result.setRGB(x, y, newColor.getRGB());
-            }
-        }
-        return result;
-    }
-
-    // 채도 + 대비 부드럽게 조정
     private BufferedImage applySaturationAndContrast(BufferedImage image, double saturationFactor, double contrastFactor) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -259,19 +222,68 @@ public class ImageService {
 
     private Color increaseSaturation(Color color, double factor) {
         float[] hsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-        hsb[1] = Math.min(1f, hsb[1] * (float) factor); // 채도(Saturation) 증가
+        hsb[1] = Math.min(1f, hsb[1] * (float) factor);
         return Color.getHSBColor(hsb[0], hsb[1], hsb[2]);
     }
 
     private Color increaseContrast(Color color, double factor) {
-        int r = (int) (((color.getRed() / 255.0 - 0.5) * factor + 0.5) * 255.0);
-        int g = (int) (((color.getGreen() / 255.0 - 0.5) * factor + 0.5) * 255.0);
-        int b = (int) (((color.getBlue() / 255.0 - 0.5) * factor + 0.5) * 255.0);
-
-        r = Math.min(255, Math.max(0, r));
-        g = Math.min(255, Math.max(0, g));
-        b = Math.min(255, Math.max(0, b));
-
+        int r = clamp((int) (((color.getRed() / 255.0 - 0.5) * factor + 0.5) * 255.0));
+        int g = clamp((int) (((color.getGreen() / 255.0 - 0.5) * factor + 0.5) * 255.0));
+        int b = clamp((int) (((color.getBlue() / 255.0 - 0.5) * factor + 0.5) * 255.0));
         return new Color(r, g, b);
+    }
+
+    // ✅ Floyd–Steinberg Dithering
+    private BufferedImage applyFloydSteinbergDithering(BufferedImage image, int levelsPerChannel) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        BufferedImage dithered = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+        int[][][] error = new int[height][width][3];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color oldColor = new Color(image.getRGB(x, y));
+                int r = clamp(oldColor.getRed() + error[y][x][0]);
+                int g = clamp(oldColor.getGreen() + error[y][x][1]);
+                int b = clamp(oldColor.getBlue() + error[y][x][2]);
+
+                int step = 256 / levelsPerChannel;
+
+                int newR = (r / step) * step;
+                int newG = (g / step) * step;
+                int newB = (b / step) * step;
+
+                Color newColor = new Color(newR, newG, newB);
+                dithered.setRGB(x, y, newColor.getRGB());
+
+                int errR = r - newR;
+                int errG = g - newG;
+                int errB = b - newB;
+
+                distributeError(error, x, y, errR, errG, errB, width, height);
+            }
+        }
+
+        return dithered;
+    }
+
+    private void distributeError(int[][][] error, int x, int y, int errR, int errG, int errB, int width, int height) {
+        applyError(error, x + 1, y,     errR, errG, errB, 7.0 / 16);
+        applyError(error, x - 1, y + 1, errR, errG, errB, 3.0 / 16);
+        applyError(error, x,     y + 1, errR, errG, errB, 5.0 / 16);
+        applyError(error, x + 1, y + 1, errR, errG, errB, 1.0 / 16);
+    }
+
+    private void applyError(int[][][] error, int x, int y, int errR, int errG, int errB, double factor) {
+        if (x >= 0 && y >= 0 && y < error.length && x < error[0].length) {
+            error[y][x][0] += (int) (errR * factor);
+            error[y][x][1] += (int) (errG * factor);
+            error[y][x][2] += (int) (errB * factor);
+        }
+    }
+
+    private int clamp(int val) {
+        return Math.max(0, Math.min(255, val));
     }
 }
